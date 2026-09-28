@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # If someone opens /.../public/..., redirect to the same path without "public"
+    RewriteCond %{THE_REQUEST} /public/([^\s?]*) [NC]
+    RewriteRule ^public/(.*)$ %1 [R=301,L]
+
+    # Internally route all requests through /public
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
