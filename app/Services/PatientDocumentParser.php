@@ -27,6 +27,7 @@ class PatientDocumentParser
     public function parse(string $ocrText, string $documentType = 'cnic'): array
     {
         $text = $this->normalizeText($ocrText);
+        $text = $this->fixDigitNoise($text);
         $format = $this->detectCnicFormat($text);
 
         if ($documentType === 'cnic') {
@@ -140,6 +141,30 @@ class PatientDocumentParser
         $text = preg_replace("/\n{3,}/", "\n\n", $text) ?? $text;
 
         return trim($text);
+    }
+
+    /**
+     * Fix common OCR mistakes around CNIC / date digits.
+     */
+    protected function fixDigitNoise(string $text): string
+    {
+        // Unicode dashes → ASCII hyphen
+        $text = str_replace(['–', '—', '−', '­'], '-', $text);
+
+        // Fix CNIC-like tokens: replace O/o with 0 and I/l with 1 inside digit groups
+        $text = preg_replace_callback(
+            '/\b[0-9OIl]{5}[\s\-]?[0-9OIl]{7}[\s\-]?[0-9OIl]\b/',
+            function (array $matches) {
+                $token = $matches[0];
+                $token = str_replace(['O', 'o'], '0', $token);
+                $token = str_replace(['I', 'l'], '1', $token);
+
+                return $token;
+            },
+            $text
+        ) ?? $text;
+
+        return $text;
     }
 
     protected function extractEnglishName(string $text): ?string

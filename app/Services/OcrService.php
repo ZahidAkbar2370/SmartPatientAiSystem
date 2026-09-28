@@ -73,7 +73,7 @@ class OcrService
                 $ocr->lang($lang);
                 $ocr->psm(6); // Assume a uniform block of text (good for ID cards)
 
-                $tesseractPath = config('ocr.tesseract_path');
+                $tesseractPath = $this->resolveTesseractPath();
                 if (! empty($tesseractPath)) {
                     $ocr->executable($tesseractPath);
                 }
@@ -96,6 +96,30 @@ class OcrService
         }
 
         return '';
+    }
+
+    /**
+     * Resolve Tesseract executable from config or common Windows install paths.
+     */
+    protected function resolveTesseractPath(): ?string
+    {
+        $configured = config('ocr.tesseract_path');
+        if (! empty($configured) && is_string($configured) && file_exists($configured)) {
+            return $configured;
+        }
+
+        $candidates = [
+            'C:\\Program Files\\Tesseract-OCR\\tesseract.exe',
+            'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe',
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     /**

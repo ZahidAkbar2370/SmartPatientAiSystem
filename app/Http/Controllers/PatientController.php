@@ -136,6 +136,7 @@ class PatientController extends Controller
                 'mimes:jpg,jpeg,png,webp',
                 'max:'.$maxKb,
             ],
+            'ocr_text' => ['nullable', 'string', 'max:20000'],
         ], [
             'document_image.required' => 'Please capture or upload a document image.',
             'document_image.mimes' => 'Please upload a valid image (JPG, PNG, or WEBP).',
@@ -150,15 +151,36 @@ class PatientController extends Controller
 
         $absolutePath = Storage::disk('local')->path($tempRelative);
 
-        $ocrResult = $ocrService->extractText($absolutePath);
+        // Prefer browser OCR text (works without installing Tesseract on the server).
+        $browserText = trim((string) $request->input('ocr_text', ''));
+
+        \Log::info('CNIC scan OCR received', [
+            'browser_text_length' => strlen($browserText),
+            'browser_text_preview' => mb_substr($browserText, 0, 300),
+            'document_type' => $request->input('document_type'),
+        ]);
+
+        if ($browserText !== '') {
+            $ocrResult = [
+                'success' => true,
+                'text' => $browserText,
+                'message' => null,
+            ];
+        } else {
+            $ocrResult = $ocrService->extractText($absolutePath);
+        }
+
         $extracted = $parser->parse($ocrResult['text'] ?? '', $request->input('document_type'));
 
         $ocrWarning = null;
-        if (! $ocrResult['success'] || ($extracted['extracted_count'] ?? 0) === 0) {
-            $ocrWarning = $ocrResult['message']
-                ?? 'We could not extract all information from the document. Please check the image quality or enter the missing information manually.';
-        } elseif (($extracted['extracted_count'] ?? 0) < 3) {
+        $count = (int) ($extracted['extracted_count'] ?? 0);
+
+        if (! $ocrResult['success'] || ($ocrResult['text'] ?? '') === '') {
+            $ocrWarning = 'We could not read text from the document. Please wait for OCR to finish, use a clearer photo, or enter the information manually.';
+        } elseif ($count === 0) {
             $ocrWarning = 'We could not extract all information from the document. Please check the image quality or enter the missing information manually.';
+        } elseif ($count < 3) {
+            $ocrWarning = 'Some fields were extracted. Please complete or correct the remaining information before saving.';
         }
 
         $patient = new Patient([

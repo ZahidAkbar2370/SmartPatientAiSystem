@@ -40,12 +40,13 @@
 
                 <div id="status-text" class="text-muted small mb-3">Starting camera...</div>
 
-                <input type="file" id="document_image" name="document_image" accept="image/jpeg,image/png,image/webp" class="d-none" required>
+                <input type="file" id="document_image" name="document_image" accept="image/jpeg,image/png,image/webp" class="d-none">
+                <input type="hidden" id="ocr_text" name="ocr_text" value="">
 
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <button type="button" id="btn-capture" class="btn btn-primary" disabled>Capture Image</button>
                     <button type="button" id="btn-retake" class="btn btn-outline-secondary d-none">Retake</button>
-                    <button type="submit" id="btn-process" class="btn btn-success d-none" disabled>Process Document</button>
+                    <button type="button" id="btn-process" class="btn btn-success d-none" disabled>Process Document</button>
                     <a href="{{ route('patients.create') }}" class="btn btn-outline-secondary">Cancel</a>
                 </div>
 
@@ -68,5 +69,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/scan.js') }}"></script>
+<script src="/js/tesseract/tesseract.min.js"></script>
+<script src="/js/scan.js?v=4"></script>
 @endpush

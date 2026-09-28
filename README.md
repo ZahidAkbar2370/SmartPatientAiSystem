@@ -97,7 +97,10 @@ OCR results are never saved automatically. The user must review and confirm.
 
 ## Notes
 
+- OCR runs in the **browser** (Tesseract.js) so scanning works even if Tesseract is not installed on the PC
+- Optional: install desktop Tesseract as a server-side backup (see above)
 - Document images are stored under `storage/app/private/patient-documents/`
 - Temporary scans use `storage/app/private/temp-scans/`
 - Image viewing routes require authentication
 - Keep image quality high (clear, well-lit, document filling the frame) for better OCR results
+- First OCR run may take longer while language data downloads
